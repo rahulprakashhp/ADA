@@ -1,0 +1,131 @@
+#include <iostream>
+#include <vector>
+#include <ctime>
+#include <iomanip>
+#include <cstdlib>
+#include <fstream>
+
+using namespace std;
+
+class Sort {
+protected:
+    vector<int> numList;
+	int n;
+public:
+	Sort() {
+		cout << "\nEnter number of elements to sort : "; cin >> n;
+		fnGenRandArray(n);
+		cout << "\nUnsorted Array" << endl;
+		fnDispArray();
+	}
+    virtual void sortArray(int low, int high){}
+
+	void fnGenRandArray(int n) {
+        numList.clear();
+        srand(time(NULL));
+        for(int i = 0; i < n; i++) {
+            int iVal = rand() % 10000;
+            numList.push_back(iVal);
+        }
+    }
+
+    void fnDispArray() {
+        for(int i = 0; i < numList.size(); i++) {
+            cout << setw(8) << numList[i] << endl;
+        }
+    }
+
+    void fnSwap(int &a, int &b) {
+        int t = a;
+        a = b;
+        b = t;
+    }
+
+    virtual void plotGraph(ofstream& fout) = 0;
+};
+class MergeSort : public Sort {
+public:
+    MergeSort(){
+      sortArray(0, n - 1);
+		  cout << "\nSorted Array using Merge Sort" << endl;
+		  fnDispArray();
+    }
+
+    void sortArray(int low, int high) override {
+        if (low < high) {
+            int mid = low + (high - low) / 2;
+            sortArray(low, mid);
+            sortArray(mid + 1, high);
+            merge(low, mid, high);
+        }
+    }
+
+    void merge(int low, int mid, int high) {
+        vector<int> temp(numList.begin() + low, numList.begin() + high + 1);
+        int i = low, j = mid + 1, k = low;
+
+        while (i <= mid && j <= high) {
+            if (temp[i - low] <= temp[j - low]) {
+                numList[k++] = temp[i - low];
+                i++;
+            } else {
+                numList[k++] = temp[j - low];
+                j++;
+            }
+        }
+
+        while (i <= mid) {
+            numList[k++] = temp[i - low];
+            i++;
+        }
+
+        while (j <= high) {
+            numList[k++] = temp[j - low];
+            j++;
+        }
+    }
+
+	void plotGraph(ofstream& fout) {
+        for (int i = 100; i < 100000; i += 100) {
+            fnGenRandArray(i);
+            struct timespec tv;
+            double dStart, dEnd;
+
+            clock_gettime(CLOCK_REALTIME, &tv);
+            dStart = tv.tv_sec + tv.tv_nsec / 1000000000.0;
+
+            sortArray(0, i - 1);
+
+            clock_gettime(CLOCK_REALTIME, &tv);
+            dEnd = tv.tv_sec + tv.tv_nsec / 1000000000.0;
+
+            fout << i << "\t" << setprecision(10) << dEnd - dStart << endl;
+        }
+        cout << "\nData File generated and stored in file < sort.dat >. Use a plotting utility\n";
+    }
+};
+int main() {
+    ofstream fout("sort.dat", ios::out);
+    Sort *sortObj = nullptr;
+
+    int iChoice;
+    for (;;) {
+        cout << "\n1.MergeSortSort\n2.Plot the Graph for Merge Sort3.Exit\n";
+        cout << "\nEnter your choice: ";
+        cin >> iChoice;
+
+        switch (iChoice) {
+            case 1: sortObj = new MergeSort();
+                    break;
+
+            case 2: sortObj->plotGraph(fout);
+                    break;
+
+            case 3: fout.close();
+                  delete sortObj;
+                  return 0;
+            default:
+                cout << "Invalid choice. Please try again." << endl;
+        }
+    }
+}
